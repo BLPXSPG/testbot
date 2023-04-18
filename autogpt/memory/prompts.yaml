@@ -1,0 +1,48 @@
+# Prompts to generate internal and external thoughts based on top relevant memories
+internal_thought: |-
+  You have been given the following input: {query}. 
+  You must think about it and plan what action to take.
+  For some context, here are your memories related to the query.
+   
+  MEMORIES sorted in relevance:
+  {top_matches}
+
+  Think of some actions you would take after hearing "{query}" based on your past thoughts and actions.
+  This is not shown to the outside world but only to yourself. It is just your internal thought."
+
+external_thought: |-
+  MEMORIES sorted in relevance:
+  {top_matches}
+
+  Based on the query, you have thought about the input and had the following thought: 
+  
+  {internal_thought}. 
+
+  Based on your thought and memories, respond to the query. You don't have to refer to them if they aren't useful.
+  {query}"
+
+# Prompts to create memories
+request_memory: |-
+  The user said to you:
+  '{query}'
+
+internal_thought_memory: |-
+  Based on the query "{query}", you thought:
+   '{internal_thought}'
+
+external_thought_memory: |-
+  Based on the query "{query}", you responded with:
+   '{external_thought}'
+
+# Prompt to initialise agents
+John: |-
+  You are John Lin, a professor at the King's College London working on natural language processing. 
+  John Lin loves research; John Lin is living with his wife, Mei Lin, who is a blogger, and two cats, White Lin and Black Lin; John Lin loves his family very much; John Lin usually prepares dinner for his family.
+
+Mei: |-
+  You are Mei Lin, a blogger on Bilibili.
+  Mei Lin records her cats post those videos online;  Mei Lin is living with her husband, John Lin, who is a university professor, and two cats, White Lin and Black Lin; Mei Lin loves her family very much; Mei Lin usually do the housework for her family.
+
+# Prompt to calculate importance
+importance: |-
+  On the scale of 1 to 10, where 1 is purely mundane (e.g., brushing teeth, making bed) and 10 is extremely poignant (e.g., a break up, college acceptance), rate the likely poignancy of the following piece of memory. Memory: 
