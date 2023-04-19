@@ -48,6 +48,40 @@ def generate_context(prompt, relevant_memory, full_message_history, model):
         current_context,
     )
 
+def get_importance(prompt, relevant_memory, assistant_reply, model):
+    score_prompt = "On the scale of 1 to 10, where 1 is purely mundane (e.g., brushing teeth, making bed) and 10 is extremely poignant (e.g., a break up, college acceptance), rate the likely poignancy of the following piece of memory. Give the score only. Memory: "
+    current_context = [
+        create_chat_message("system", prompt),
+        #create_chat_message(
+        #    "system", f"The current time and date is {time.strftime('%c')}"
+        #),
+        create_chat_message(
+            "system",
+            f"This reminds you of these events from your past:\n{relevant_memory}\n\n",
+        ),
+        create_chat_message("system", score_prompt),
+        create_chat_message("assistant", assistant_reply),
+    ]
+    
+    # Count the currently used tokens
+    current_tokens_used = token_counter.count_message_tokens(current_context, model)
+    return (
+        current_tokens_used,
+        current_context,
+    )
+    
+def score_check(s):
+    # Check if the string is an integer from 1 to 10
+    if s.isdigit() and 1 <= int(s) <= 10:
+        return int(s)/10
+
+    # Check if the string contains an integer from 1 to 10
+    check_list = [10-i for i in range(10)]
+    for i in check_list:
+        if str(i) in s:
+            return i/10
+    logger.debug(f"{s} is neither an integer from 1 to 10 nor contains one.")
+    return 1/10
 
 # TODO: Change debug from hardcode to argument
 def chat_with_ai(
@@ -161,14 +195,26 @@ def chat_with_ai(
                 messages=current_context,
                 max_tokens=tokens_remaining,
             )
+            #calculate the importance score of current assistant action
+            importance_tokens_used, importance_context = get_importance(prompt, relevant_memory, assistant_reply, model)
+            while importance_tokens_used > 2500:
+                # remove memories until we are under 2500 tokens
+                relevant_memory = relevant_memory[:-1]
+                importance_tokens_used, importance_context = get_importance(prompt, relevant_memory, assistant_reply, model)
+            importance_score = create_chat_completion(
+                model=model,
+                messages=importance_context,
+                max_tokens=token_limit - importance_tokens_used,
+            )
+            importance_score = score_check(importance_score)
 
             # Update full message history
             full_message_history.append(create_chat_message("user", user_input))
             full_message_history.append(
                 create_chat_message("assistant", assistant_reply)
             )
-
-            return assistant_reply
+            return assistant_reply, importance_score
+        
         except RateLimitError:
             # TODO: When we switch to langchain, this is built in
             print("Error: ", "API Rate Limit Reached. Waiting 10 seconds...")

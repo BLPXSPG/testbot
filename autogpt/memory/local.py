@@ -24,7 +24,7 @@ def create_default_embeddings():
 @dataclasses.dataclass
 class CacheContent:
     texts: List[str] = dataclasses.field(default_factory=list)
-    #scores: List[float] = dataclasses.field(default_factory=list)
+    scores: List[float] = dataclasses.field(default_factory=list)
     #times: List[int] = dataclasses.field(default_factory=list)
     embeddings: np.ndarray = dataclasses.field(
         default_factory=create_default_embeddings
@@ -68,7 +68,7 @@ class LocalCache(MemoryProviderSingleton):
         prompt = data["importance"]
         return generate(prompt+text)"""
     
-    def add(self, text: str, time: int):
+    def add(self, text: str, importance_score: float):
         """
         Add text to our list of texts, add embedding as row to our
             embeddings-matrix
@@ -82,7 +82,7 @@ class LocalCache(MemoryProviderSingleton):
             return ""
         self.data.texts.append(text)
         #importance_score = self.get_importance(text)
-        #self.data.scores.append(importance_score)
+        self.data.scores.append(importance_score)
         #self.data.times.append(time)
 
         embedding = create_embedding_with_ada(text)
@@ -136,8 +136,8 @@ class LocalCache(MemoryProviderSingleton):
         embedding = create_embedding_with_ada(text)
 
         scores = np.dot(self.data.embeddings, embedding)
-
-        top_k_indices = np.argsort(scores)[-k:][::-1]
+        scores_rerank = scores + np.array(self.data.scores, dtype=np.float)
+        top_k_indices = np.argsort(scores_rerank)[-k:][::-1]
 
         return [self.data.texts[i] for i in top_k_indices]
 

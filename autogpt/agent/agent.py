@@ -72,7 +72,7 @@ class Agent:
 
             # Send message to AI, get response
             with Spinner("Thinking... "):
-                assistant_reply = chat_with_ai(
+                assistant_reply, importance_score = chat_with_ai(
                     self.system_prompt,
                     self.triggering_prompt,
                     self.full_message_history,
@@ -181,7 +181,7 @@ class Agent:
                 f"\nHuman Feedback: {user_input} "
             )
 
-            self.memory.add(memory_to_add)
+            self.memory.add(memory_to_add, importance_score)
 
             # Check if there's a result from the command append it to the message
             # history
